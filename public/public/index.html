@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Arena Multiplayer</title>
+
+  <link
+    rel="stylesheet"
+    href="/style.css"
+  >
+
+  <script
+    src="/socket.io/socket.io.js"
+  ></script>
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.min.js"
+  ></script>
+</head>
+
+<body>
+
+<div id="loading">
+  <div class="loading-box">
+    <h1>ARENA</h1>
+    <p>Cargando juego...</p>
+  </div>
+</div>
+
+<section id="authScreen" class="screen">
+
+  <div class="panel auth-panel">
+
+    <h1>ARENA</h1>
+
+    <p class="subtitle">
+      Multiplayer 3D
+    </p>
+
+    <div class="tabs">
+
+      <button
+        id="loginTab"
+        class="tab active"
+      >
+        Iniciar sesión
+      </button>
+
+      <button
+        id="registerTab"
+        class="tab"
+      >
+        Crear cuenta
+      </button>
+
+    </div>
+
+    <form id="loginForm">
+
+      <input
+        id="loginEmail"
+        type="email"
+        placeholder="Email"
+        required
+      >
+
+      <input
+        id="loginPassword"
+        type="password"
+        placeholder="Contraseña"
+        required
+      >
+
+      <button
+        type="submit"
+        class="main-button"
+      >
+        ENTRAR
+      </button>
+
+    </form>
+
+    <form
+      id="registerForm"
+      class="hidden"
+    >
+
+      <input
+        id="registerName"
+        type="text"
+        placeholder="Nombre de jugador"
+        maxlength="20"
+        required
+      >
+
+      <input
+        id="registerEmail"
+        type="email"
+        placeholder="Email"
+        required
+      >
+
+      <input
+        id="registerPassword"
+        type="password"
+        placeholder="Contraseña"
+        minlength="6"
+        required
+      >
+
+      <button
+        type="submit"
+        class="main-button"
+      >
+        CREAR CUENTA
+      </button>
+
+    </form>
+
+    <div
+      id="authMessage"
+      class="message"
+    ></div>
+
+  </div>
+
+</section>
+
+<section
+  id="lobbyScreen"
+  class="screen hidden"
+>
+
+  <div class="panel lobby-panel">
+
+    <div class="profile">
+
+      <div>
+        <span class="small-label">
+          JUGADOR
+        </span>
+
+        <h2 id="playerName">
+          -
+        </h2>
+
+        <div
+          id="playerId"
+          class="player-id"
+        >
+          -
+        </div>
+      </div>
+
+      <button
+        id="logoutButton"
+        class="secondary-button"
+      >
+        SALIR
+      </button>
+
+    </div>
+
+    <hr>
+
+    <div class="lobby-grid">
+
+      <div class="lobby-card">
+
+        <h3>Crear partida</h3>
+
+        <p>
+          Crea una sala privada y comparte
+          el código con tus amigos.
+        </p>
+
+        <button
+          id="createRoomButton"
+          class="main-button"
+        >
+          CREAR SALA
+        </button>
+
+      </div>
+
+      <div class="lobby-card">
+
+        <h3>Entrar a una sala</h3>
+
+        <input
+          id="roomCodeInput"
+          maxlength="6"
+          placeholder="CÓDIGO"
+        >
+
+        <button
+          id="joinRoomButton"
+          class="main-button"
+        >
+          ENTRAR
+        </button>
+
+      </div>
+
+      <div class="lobby-card">
+
+        <h3>Jugar con amigo</h3>
+
+        <p>
+          Introduce el ID de tu amigo
+          para enviarle una invitación.
+        </p>
+
+        <input
+          id="friendIdInput"
+          placeholder="PLR-XXXXXXXX"
+        >
+
+        <button
+          id="inviteButton"
+          class="main-button"
+        >
+          INVITAR
+        </button>
+
+      </div>
+
+    </div>
+
+    <div
+      id="lobbyMessage"
+      class="message"
+    ></div>
+
+  </div>
+
+</section>
+
+<section
+  id="gameScreen"
+  class="game-screen hidden"
+>
+
+  <div id="gameContainer"></div>
+
+  <div class="top-ui">
+
+    <div class="hud-box">
+      <span>SALA</span>
+      <strong id="roomCodeDisplay">
+        ------
+      </strong>
+    </div>
+
+    <div class="hud-box">
+      <span>JUGADORES</span>
+      <strong id="playersCount">
+        0
+      </strong>
+    </div>
+
+    <div class="hud-box">
+      <span>PUNTOS</span>
+      <strong id="scoreDisplay">
+        0
+      </strong>
+    </div>
+
+  </div>
+
+  <div
+    id="healthBarContainer"
+    class="health-container"
+  >
+
+    <div
+      id="healthBar"
+      class="health-bar"
+    ></div>
+
+    <span id="healthText">
+      100 / 100
+    </span>
+
+  </div>
+
+  <div class="instructions">
+
+    <span>
+      WASD / FLECHAS = MOVER
+    </span>
+
+    <span>
+      ESPACIO = ATACAR
+    </span>
+
+  </div>
+
+  <button
+    id="leaveGameButton"
+    class="leave-button"
+  >
+    SALIR DE SALA
+  </button>
+
+  <div
+    id="mobileControls"
+    class="mobile-controls"
+  >
+
+    <div class="joystick">
+
+      <button data-key="up">
+        ▲
+      </button>
+
+      <button data-key="left">
+        ◀
+      </button>
+
+      <button data-key="right">
+        ▶
+      </button>
+
+      <button data-key="down">
+        ▼
+      </button>
+
+    </div>
+
+    <button
+      id="mobileAttack"
+      class="attack-button"
+    >
+      ATACAR
+    </button>
+
+  </div>
+
+  <div
+    id="chat"
+    class="chat"
+  >
+
+    <div
+      id="chatMessages"
+      class="chat-messages"
+    ></div>
+
+    <form id="chatForm">
+
+      <input
+        id="chatInput"
+        maxlength="150"
+        placeholder="Escribe un mensaje..."
+      >
+
+      <button>
+        ENVIAR
+      </button>
+
+    </form>
+
+  </div>
+
+</section>
+
+<div
+  id="notification"
+  class="notification hidden"
+></div>
+
+<script src="/app.js"></script>
+
+</body>
+</html>
